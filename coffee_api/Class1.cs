@@ -49,15 +49,18 @@ namespace coffee_api
 
         Object locker = new Object();
         Object lockerfile = new Object();
+        public int coffee_machine_system_status;
         public int product_status
         {
-            set {
+            set
+            {
                 lock (locker)
                 {
                     _product_status = value;
                 }
             }
-            get {
+            get
+            {
                 int v;
                 lock (locker)
                 {
@@ -72,18 +75,21 @@ namespace coffee_api
         /// <returns></returns>
         private void save_log(string input)
         {
-            lock (lockerfile) {
-                try {
+            lock (lockerfile)
+            {
+                try
+                {
                     StreamWriter fileWriter1;
                     string log_file = DateTime.Now.ToString("yyyy-MM-dd") + "_coffee_log.txt";
                     fileWriter1 = new StreamWriter(log_file, true, Encoding.Default);
                     fileWriter1.WriteLine(DateTime.Now.ToString() + ":" + input);
                     fileWriter1.Close();
-                } catch { }
-                
+                }
+                catch { }
+
             }
         }
-        private int rocStatus( )
+        private int rocStatus()
         {
             int v;
             lock (locker)
@@ -156,7 +162,8 @@ namespace coffee_api
                 product_status = 0;
                 return true;
             }
-            else {
+            else
+            {
                 return false;
             }
         }
@@ -172,7 +179,7 @@ namespace coffee_api
         public Class1()
         {
 
-           //构造函数，初始化对象
+            //构造函数，初始化对象
         }
 
         private void SerialDataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
@@ -242,7 +249,7 @@ namespace coffee_api
 
                     //crc校验，并取数据
                     int length = arraydata_after_escape.Count - 2;
-                    if (length<4) break;
+                    if (length < 4) break;
                     byte[] senddata = new byte[length];
                     byte[] senddata1 = new byte[length - 2];
 
@@ -253,26 +260,26 @@ namespace coffee_api
                     UInt16 tmpcrc = append_crc16(senddata, length);
                     UInt16 receive_crc = (UInt16)((UInt16)(arraydata_after_escape[arraydata_after_escape.Count - 3] << 8) | (UInt16)arraydata_after_escape[arraydata_after_escape.Count - 2]);
                     if (tmpcrc == receive_crc)
-                    {                        
+                    {
                         string savestr;
                         Array.Copy(senddata, senddata1, length - 2);
                         RemoteApiRs232.ApiMessage msg = RemoteApiRs232.ApiMessage.Parser.ParseFrom(senddata1);
 
                         save_log(msg.ApiMessageCase.ToString());
-                        
+
                         switch (msg.ApiMessageCase)
                         {
                             case RemoteApiRs232.ApiMessage.ApiMessageOneofCase.StartProduct:
                                 Console.WriteLine(1);
                                 savestr = RemoteApiRs232.ApiMessage.ApiMessageOneofCase.StartProduct.ToString();
-                                
+
                                 save_log(":1： " + savestr);
 
                                 break;
                             case RemoteApiRs232.ApiMessage.ApiMessageOneofCase.GetProductList:
                                 Console.WriteLine(2);
                                 savestr = RemoteApiRs232.ApiMessage.ApiMessageOneofCase.GetProductList.ToString();
-                                
+
                                 save_log(":2： " + savestr);
                                 break;
                             case RemoteApiRs232.ApiMessage.ApiMessageOneofCase.ProductStarted:
@@ -286,22 +293,22 @@ namespace coffee_api
                                 {
                                     case RemoteApiRs232.ResponseCode.DbusAdapterError:
                                         Console.WriteLine(1);
-                                        product_status = 3;
+                                        coffee_machine_system_status = msg.ProductStarted.ResponseCode.GetHashCode();
 
                                         break;
                                     case RemoteApiRs232.ResponseCode.GeneralError:
                                         Console.WriteLine(1);
-                                        product_status = 3;
+                                        coffee_machine_system_status = msg.ProductStarted.ResponseCode.GetHashCode();
 
                                         break;
                                     case RemoteApiRs232.ResponseCode.InvalidParameter:
                                         Console.WriteLine(1);
-                                        product_status = 3;
+                                        coffee_machine_system_status = msg.ProductStarted.ResponseCode.GetHashCode();
 
                                         break;
                                     case RemoteApiRs232.ResponseCode.ProductNotAvailable:
                                         Console.WriteLine(1);
-                                        product_status = 3;
+                                        coffee_machine_system_status = msg.ProductStarted.ResponseCode.GetHashCode();
 
                                         break;
                                     case RemoteApiRs232.ResponseCode.Success:
@@ -310,20 +317,20 @@ namespace coffee_api
                                         break;
                                     case RemoteApiRs232.ResponseCode.SystemBusy:
                                         Console.WriteLine(1);
-                                        product_status = 3;
+                                        coffee_machine_system_status = msg.ProductStarted.ResponseCode.GetHashCode();
                                         savestr = msg.ProductStarted.ResponseCode.GetHashCode().ToString();
                                         save_log(":SystemBusy3： " + savestr);
-                                       
+
 
                                         break;
                                     case RemoteApiRs232.ResponseCode.UnknownProductId:
                                         Console.WriteLine(1);
-                                        product_status = 3;
+                                        coffee_machine_system_status = msg.ProductStarted.ResponseCode.GetHashCode();
 
                                         break;
                                     case RemoteApiRs232.ResponseCode.UnknownResponseCode:
                                         Console.WriteLine(1);
-                                        product_status = 3;
+                                        coffee_machine_system_status = msg.ProductStarted.ResponseCode.GetHashCode();
                                         break;
                                 }
                                 break;
@@ -341,7 +348,7 @@ namespace coffee_api
 
                                 savestr = msg.ProductList.ResponseCode.ToString();
                                 save_log(":5： " + savestr);
-                                
+
                                 switch (msg.ProductList.ResponseCode)
                                 {
                                     case RemoteApiRs232.ResponseCode.DbusAdapterError:
@@ -532,7 +539,7 @@ namespace coffee_api
                                 break;
                             case RemoteApiRs232.ApiMessage.ApiMessageOneofCase.ProductFinished:
                                 Console.WriteLine(7);
-                                
+
                                 if (msg.ProductFinished.Success == true && msg.ProductFinished.ProductId == localproductid)
                                 {
                                     product_status = 1;
@@ -605,6 +612,7 @@ namespace coffee_api
         {
             try
             {
+                product_status = 255; //add date 2019 10-28 11:10
                 serial_status = true;
                 if (m_serial_port.IsOpen)
                 {
@@ -649,7 +657,7 @@ namespace coffee_api
         public void start_product(string idStr)
         {
             //product_status = 0;
-            
+
             msg_list.Clear();
             send_data_array.Clear();
             if (m_serial_port.IsOpen)
@@ -659,7 +667,7 @@ namespace coffee_api
                 //string sendid = id_list[index].ToString();
                 string sendid = idStr;
                 localproductid = sendid;
-                
+
                 save_log(":start：" + idStr + ";product_status=" + product_status);
                 byte[] array = Encoding.ASCII.GetBytes(sendid);
 
@@ -727,7 +735,7 @@ namespace coffee_api
                 //发送字符串
                 try
                 {
-                    
+
                     m_serial_port.Write(send_data, 0, send_length);
                     //product_status = 0;
                 }

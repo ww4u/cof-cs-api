@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>coffee_api</RootNamespace>
-    <AssemblyName>coffee_api2.4.8</AssemblyName>
+    <AssemblyName>coffee_api2.4.9</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
