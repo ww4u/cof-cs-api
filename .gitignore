@@ -1,2 +1,3 @@
-/coffee/bin
-/coffee/obj
+/.vs/
+/coffee_api/bin
+/coffee_api/obj
